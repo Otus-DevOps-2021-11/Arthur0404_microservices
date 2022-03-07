@@ -1,53 +1,53 @@
 version: '3.3'
 services:
   post_db:
-    image: mongo:${DB_VERS}
+    image: mongo:3.2
     volumes:
       - post_db:/data/db
     networks:
       - back_net
+  comment_db:
+    image: mongo:3.2
+    volumes:
+      - comment_db:/data/db
+    networks:
+      - back_net
   ui:
-    build: ../src/ui
-    image: ${USERNAME}/ui:${UI_VERS}
+    #build: ./ui
+    image: anrad13/ui:${VERSION}
     ports:
-      - ${APP_PORT}:9292/tcp
+      - ${PORT}:9292/tcp
     networks:
       - front_net
   post:
-    build: ../src/post-py
-    image: ${USERNAME}/post:${POST_VERS}
+    #build: ./post-py
+    image: anrad13/post:${VERSION}
     networks:
       - back_net
       - front_net
   comment:
-    build: ../src/comment
-    image: ${USERNAME}/comment:${COMM_VERS}
+    #build: ./comment
+    image: anrad13/comment:${VERSION}
     networks:
       - back_net
       - front_net
 
-volumes:
-  post_db:
-
-networks:
-  front_net:
-  back_net:
-
   prometheus:
-    image: ${REPONAME}/prometheus:latest
+    image: anrad13/prometheus
     ports:
       - '9090:9090'
     volumes:
       - prometheus_data:/prometheus
-    command:
+    command: # Передаем доп параметры в командной строке
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention=1d'
+      - '--storage.tsdb.retention=1d' # Задаем время хранения метрик в 1 день
     networks:
+      - back_net
       - front_net
 
   node-exporter:
-    image: prom/node-exporter:v1.3.1
+    image: prom/node-exporter:v0.15.2
     user: root
     volumes:
       - /proc:/host/proc:ro
@@ -58,17 +58,13 @@ networks:
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
     networks:
-      - front_net
-  volumes:
-    post_db:
-    prometheus_data:
+      - back_net
 
-  networks:
-    back_net:
-      ipam:
-        config:
-          - subnet: 10.0.2.0/24
-    front_net:
-        ipam:
-          config:
-            - subnet: 10.0.1.0/24
+volumes:
+  post_db:
+  comment_db:
+  prometheus_data:
+
+networks:
+  back_net:
+  front_net:
