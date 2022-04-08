@@ -44,7 +44,6 @@
   </store>
 </match>
 
-
 <match *.**>
   @type copy
   <store>
@@ -63,3 +62,4 @@
     @type stdout
   </store>
 </match>
+
