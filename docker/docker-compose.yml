@@ -1,51 +1,76 @@
 version: '3.3'
 services:
   post_db:
-    image: mongo:3.2
+    hostname: post_db
+    container_name: post_db
+    image: mongo:${TAG_DB_VER}
+    #environment:
+      #MONGO_INITDB_ROOT_USERNAME: root
+      #MONGO_INITDB_ROOT_PASSWORD: "123456"
     volumes:
       - post_db:/data/db
     networks:
-      - back_net
-  comment_db:
-    image: mongo:3.2
-    volumes:
-      - comment_db:/data/db
-    networks:
-      - back_net
+      back_net:
+        aliases:
+           - comment_db
+           - post_db
+
   ui:
+    hostname: ui
+    container_name: ui
     #build: ./ui
-    image: anrad13/ui:${VERSION}
+    image: ${PROJECT}/ui:${TAG_APP_VER}
+    environment:
+      - ZIPKIN_ENABLED=${ZIPKIN_ENABLED}
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: service.ui
     ports:
-      - ${PORT}:9292/tcp
+      - ${APP_PORT}:9292/tcp
     networks:
       - front_net
   post:
+    hostname: post
+    container_name: post
     #build: ./post-py
-    image: anrad13/post:${VERSION}
+    image: ${PROJECT}/post:${TAG_APP_VER}
+    environment:
+      - ZIPKIN_ENABLED=${ZIPKIN_ENABLED}
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: service.post
     networks:
-      - back_net
       - front_net
+      - back_net
   comment:
+    hostname: comment
+    container_name: comment
     #build: ./comment
-    image: anrad13/comment:${VERSION}
+    image: ${PROJECT}/comment:${TAG_APP_VER}
+    environment:
+      - ZIPKIN_ENABLED=${ZIPKIN_ENABLED}
     networks:
-      - back_net
       - front_net
+      - back_net
 
   prometheus:
-    image: anrad13/prometheus
+    image: ${PROJECT}/prometheus
     ports:
       - '9090:9090'
     volumes:
       - prometheus_data:/prometheus
-    command: # Передаем доп параметры в командной строке
+    command: # Передаем доп параметры в командной строке
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention=1d' # Задаем время хранения метрик в 1 день
     networks:
-      - back_net
       - front_net
-
+      - back_net
+  
   node-exporter:
     image: prom/node-exporter:v0.15.2
     user: root
@@ -58,13 +83,28 @@ services:
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
     networks:
+      - front_net
       - back_net
+  
+  mongodb-exporter:
+        hostname: mongodb-exporter
+        container_name: mongodb-exporter
+        image: percona/mongodb_exporter:0.30
+        command:
+          - '--web.listen-address=:9216'
+          - '--mongodb.uri=mongodb://post_db:27017'
+        networks:
+          - front_net
+          - back_net
 
 volumes:
   post_db:
-  comment_db:
   prometheus_data:
 
 networks:
-  back_net:
   front_net:
+    #name: front_net
+    external: true
+
+  back_net:
+    external: true
