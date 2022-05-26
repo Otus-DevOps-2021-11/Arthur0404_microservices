@@ -20,6 +20,8 @@ spec:
       labels:
         app: reddit
         component: mongo
+        comment-db: "true"
+        post-db: "true"
         post-db: "true"
         comment-db: "true"
     spec:
@@ -30,6 +32,8 @@ spec:
         - name: mongo-persistent-storage
           mountPath: /data/db
       volumes:
+      - name: mongo-persistent-storage
+        emptyDir: {}
       #special for f..g tests
       #- name: mongo-gce-pd-storage
       - name: mongo-persistent-storage

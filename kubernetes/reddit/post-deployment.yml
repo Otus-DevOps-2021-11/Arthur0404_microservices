@@ -8,7 +8,7 @@ metadata:
     component: post
     post-db: "true"
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: reddit
@@ -19,6 +19,14 @@ spec:
       labels:
         app: reddit
         component: post
+    spec:
+      containers:
+      - image: kowashi/post
+        name: post
+        env:
+        - name: POST_DATABASE_HOST
+          value: post-db
+
         post-db: "true"
     spec:
       containers:
