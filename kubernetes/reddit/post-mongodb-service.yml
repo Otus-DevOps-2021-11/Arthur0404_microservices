@@ -17,4 +17,6 @@ spec:
     app: reddit
     component: mongo
     post-db: "true"
+
     comment-db: "true"
+

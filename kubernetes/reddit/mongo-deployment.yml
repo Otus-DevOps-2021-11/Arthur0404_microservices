@@ -22,6 +22,8 @@ spec:
         component: mongo
         comment-db: "true"
         post-db: "true"
+        post-db: "true"
+        comment-db: "true"
     spec:
       containers:
       - image: mongo:3.2
@@ -32,3 +34,8 @@ spec:
       volumes:
       - name: mongo-persistent-storage
         emptyDir: {}
+      #special for f..g tests
+      #- name: mongo-gce-pd-storage
+      - name: mongo-persistent-storage
+        persistentVolumeClaim:
+          claimName:  mongo-pvc
